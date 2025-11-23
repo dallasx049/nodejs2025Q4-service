@@ -14,7 +14,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import {
   isValidCreateUserDto,
   isValidUpdatePasswordDto,
-  isValidUserId,
+  isValidUUID,
 } from '../../lib/validation';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { getUserWithoutPassword } from '../../lib/helpers';
@@ -46,9 +46,9 @@ export class UsersController {
 
   @Get(':id')
   async getById(@Param('id') id: string) {
-    if (!isValidUserId(id)) {
+    if (!isValidUUID(id)) {
       throw new HttpException(
-        'User id must be a valid UUID',
+        'Id must be a valid UUID',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -67,9 +67,9 @@ export class UsersController {
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    if (!isValidUserId(id)) {
+    if (!isValidUUID(id)) {
       throw new HttpException(
-        'User id must be a valid UUID',
+        'Id must be a valid UUID',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -102,9 +102,9 @@ export class UsersController {
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    if (!isValidUserId(id)) {
+    if (!isValidUUID(id)) {
       throw new HttpException(
-        'User id must be a valid UUID',
+        'Id must be a valid UUID',
         HttpStatus.BAD_REQUEST,
       );
     }
