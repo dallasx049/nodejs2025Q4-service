@@ -1,53 +1,24 @@
-import { validate } from 'uuid';
-import { CreateUserDto } from '../modules/users/dto/create-user.dto';
-import { UpdatePasswordDto } from '../modules/users/dto/update-password.dto';
-import { CreateArtistDto } from '../modules/artists/dto/create-artist.dto';
-import { UpdateArtistDto } from '../modules/artists/dto/update-artist.dto';
+import * as z from 'zod';
+import { BadRequestException } from '@nestjs/common';
 
-export const isValidCreateUserDto = (createUserDto: CreateUserDto): boolean => {
-  return (
-    createUserDto?.login &&
-    createUserDto?.password &&
-    typeof createUserDto?.login === 'string' &&
-    typeof createUserDto?.password === 'string'
-  );
-};
+const UUIDSchema = z.uuid({ version: 'v4', error: 'Invalid UUID' });
 
-export const isValidUpdatePasswordDto = (
-  updatePasswordDto: UpdatePasswordDto,
-): boolean => {
-  return (
-    updatePasswordDto?.oldPassword &&
-    updatePasswordDto?.newPassword &&
-    typeof updatePasswordDto?.oldPassword === 'string' &&
-    typeof updatePasswordDto?.newPassword === 'string'
-  );
-};
+export const parseUUID = (id: string): string => {
+  const { data, success, error } = UUIDSchema.safeParse(id);
 
-export const isValidCreateArtistDto = (
-  createArtistDto: CreateArtistDto,
-): boolean => {
-  return (
-    createArtistDto?.name &&
-    createArtistDto?.grammy &&
-    typeof createArtistDto?.name === 'string' &&
-    typeof createArtistDto?.grammy === 'boolean'
-  );
-};
-
-export const isValidUpdateArtistDto = (
-  updateArtistDto: UpdateArtistDto,
-): boolean => {
-  const validations = [];
-
-  if (updateArtistDto?.name) {
-    validations.push(typeof updateArtistDto?.name === 'string');
-  }
-  if (updateArtistDto?.grammy) {
-    validations.push(typeof updateArtistDto?.grammy === 'boolean');
+  if (!success) {
+    throw new BadRequestException(error.issues[0].message);
   }
 
-  return validations.every(Boolean);
+  return data;
 };
 
-export const isValidUUID = (id: string): boolean => validate(id);
+export const parseDto = <T>(schema: z.Schema<T>, dto: T): T => {
+  const { data, success, error } = schema.safeParse(dto);
+
+  if (!success) {
+    throw new BadRequestException(error.issues[0].message);
+  }
+
+  return data;
+};

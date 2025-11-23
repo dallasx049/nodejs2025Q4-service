@@ -2,22 +2,20 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
-  HttpException,
-  HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import {
-  isValidCreateUserDto,
-  isValidUpdatePasswordDto,
-  isValidUUID,
-} from '../../lib/validation';
+import { parseDto, parseUUID } from '../../lib/validation';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { getUserWithoutPassword } from '../../lib/helpers';
+import { getUserWithoutPassword } from './lib/getUserWithoutPassword';
+import { CreateUserDtoSchema, UpdatePasswordDtoSchema } from './lib/validation';
+import { ErrorMessage } from '../../lib/constants';
 
 @Controller('/user')
 export class UsersController {
@@ -32,31 +30,19 @@ export class UsersController {
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    if (!isValidCreateUserDto(createUserDto)) {
-      throw new HttpException(
-        'You must provide a valid payload',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const createdUser = await this.usersService.create(createUserDto);
+    const dto = parseDto(CreateUserDtoSchema, createUserDto);
+    const createdUser = await this.usersService.create(dto);
 
     return getUserWithoutPassword(createdUser);
   }
 
   @Get(':id')
   async getById(@Param('id') id: string) {
-    if (!isValidUUID(id)) {
-      throw new HttpException(
-        'Id must be a valid UUID',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const user = await this.usersService.getOne(id);
+    const uuid = parseUUID(id);
+    const user = await this.usersService.getOne(uuid);
 
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException();
     }
 
     return getUserWithoutPassword(user);
@@ -67,32 +53,22 @@ export class UsersController {
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    if (!isValidUUID(id)) {
-      throw new HttpException(
-        'Id must be a valid UUID',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const user = await this.usersService.getOne(id);
+    const uuid = parseUUID(id);
+    const user = await this.usersService.getOne(uuid);
 
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException();
     }
 
-    if (!isValidUpdatePasswordDto(updatePasswordDto)) {
-      throw new HttpException(
-        'You must provide a valid payload',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    const dto = parseDto(UpdatePasswordDtoSchema, updatePasswordDto);
+    const { oldPassword, newPassword } = dto;
 
-    if (user.password !== updatePasswordDto.oldPassword) {
-      throw new HttpException('Wrong password', HttpStatus.FORBIDDEN);
+    if (user.password !== oldPassword) {
+      throw new ForbiddenException(ErrorMessage.WRONG_PASSWORD);
     }
 
     const updatedUser = await this.usersService.update(id, {
-      password: updatePasswordDto.newPassword,
+      password: newPassword,
       version: user.version + 1,
       updatedAt: Date.now(),
     });
@@ -102,17 +78,12 @@ export class UsersController {
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    if (!isValidUUID(id)) {
-      throw new HttpException(
-        'Id must be a valid UUID',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    const uuid = parseUUID(id);
 
-    const deletedUser = await this.usersService.delete(id);
+    const deletedUser = await this.usersService.delete(uuid);
 
     if (!deletedUser) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException();
     }
 
     return getUserWithoutPassword(deletedUser);

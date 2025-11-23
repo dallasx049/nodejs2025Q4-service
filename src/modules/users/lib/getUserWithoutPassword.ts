@@ -1,4 +1,4 @@
-import { User } from '../modules/users/interfaces/user.interface';
+import { User } from '../interfaces/user.interface';
 
 export const getUserWithoutPassword = ({
   id,

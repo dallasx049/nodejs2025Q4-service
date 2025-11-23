@@ -3,20 +3,16 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
 } from '@nestjs/common';
 import { ArtistsService } from './artists.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
-import {
-  isValidCreateArtistDto,
-  isValidUpdateArtistDto,
-  isValidUUID,
-} from '../../lib/validation';
+import { parseDto, parseUUID } from '../../lib/validation';
 import { UpdateArtistDto } from './dto/update-artist.dto';
+import { CreateArtistDtoSchema, UpdateArtistDtoSchema } from './lib/validation';
 
 @Controller('/artist')
 export class ArtistsController {
@@ -29,29 +25,18 @@ export class ArtistsController {
 
   @Post()
   async create(@Body() createArtistDto: CreateArtistDto) {
-    if (!isValidCreateArtistDto(createArtistDto)) {
-      throw new HttpException(
-        'You must provide a valid payload',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    const dto = parseDto(CreateArtistDtoSchema, createArtistDto);
 
-    return await this.artistsService.create(createArtistDto);
+    return await this.artistsService.create(dto);
   }
 
   @Get(':id')
   async getOne(@Param('id') id: string) {
-    if (!isValidUUID(id)) {
-      throw new HttpException(
-        'Id must be a valid UUID',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const artist = await this.artistsService.getOne(id);
+    const uuid = parseUUID(id);
+    const artist = await this.artistsService.getOne(uuid);
 
     if (!artist) {
-      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException();
     }
 
     return artist;
@@ -62,24 +47,12 @@ export class ArtistsController {
     @Param('id') id: string,
     @Body() updateArtistDto: UpdateArtistDto,
   ) {
-    if (!isValidUUID(id)) {
-      throw new HttpException(
-        'Id must be a valid UUID',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    if (!isValidUpdateArtistDto(updateArtistDto)) {
-      throw new HttpException(
-        'You must provide a valid payload',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const updatedArtist = await this.artistsService.update(id, updateArtistDto);
+    const uuid = parseUUID(id);
+    const dto = parseDto(UpdateArtistDtoSchema, updateArtistDto);
+    const updatedArtist = await this.artistsService.update(uuid, dto);
 
     if (!updatedArtist) {
-      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException();
     }
 
     return updatedArtist;
@@ -87,17 +60,11 @@ export class ArtistsController {
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    if (!isValidUUID(id)) {
-      throw new HttpException(
-        'Id must be a valid UUID',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const deletedArtist = await this.artistsService.delete(id);
+    const uuid = parseUUID(id);
+    const deletedArtist = await this.artistsService.delete(uuid);
 
     if (!deletedArtist) {
-      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException();
     }
 
     return deletedArtist;
