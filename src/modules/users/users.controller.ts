@@ -73,6 +73,10 @@ export class UsersController {
       updatedAt: Date.now(),
     });
 
+    if (!updatedUser) {
+      throw new NotFoundException();
+    }
+
     return getUserWithoutPassword(updatedUser);
   }
 
