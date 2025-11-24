@@ -5,7 +5,4 @@ export const CreateArtistDtoSchema = z.object({
   grammy: z.boolean('Grammy must be of type Boolean'),
 });
 
-export const UpdateArtistDtoSchema = z.object({
-  name: z.string('Name must be of type String').optional(),
-  grammy: z.boolean('Grammy must be of type Boolean').optional(),
-});
+export const UpdateArtistDtoSchema = CreateArtistDtoSchema.partial();
