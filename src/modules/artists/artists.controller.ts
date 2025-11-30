@@ -14,12 +14,16 @@ import { parseDto, parseUUID } from '../../lib/validation';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { CreateArtistDtoSchema, UpdateArtistDtoSchema } from './lib/validation';
 import { AlbumsService } from '../albums/albums.service';
+import { TracksService } from '../tracks/tracks.service';
+import { FavoritesService } from '../favorites/favorites.service';
 
 @Controller('/artist')
 export class ArtistsController {
   constructor(
     private artistsService: ArtistsService,
     private albumsService: AlbumsService,
+    private tracksService: TracksService,
+    private favoritesService: FavoritesService,
   ) {}
 
   @Get()
@@ -71,11 +75,25 @@ export class ArtistsController {
       throw new NotFoundException();
     }
 
-    const album = this.albumsService.getByArtistId(uuid);
+    this.favoritesService.removeArtist(uuid);
 
-    if (album) {
-      await this.albumsService.update(album.id, { artistId: null });
-    }
+    const albums = await this.albumsService.getAll();
+    await Promise.all(
+      albums
+        .filter((album) => album.artistId === uuid)
+        .map((album) =>
+          this.albumsService.update(album.id, { artistId: null }),
+        ),
+    );
+
+    const tracks = await this.tracksService.getAll();
+    await Promise.all(
+      tracks
+        .filter((track) => track.artistId === uuid)
+        .map((track) =>
+          this.tracksService.update(track.id, { artistId: null }),
+        ),
+    );
 
     return deletedArtist;
   }

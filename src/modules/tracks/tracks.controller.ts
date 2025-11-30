@@ -13,10 +13,14 @@ import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { CreateTrackDtoSchema, UpdateTrackDtoSchema } from './lib/validation';
 import { UpdateTrackDto } from './dto/update-track.dto';
+import { FavoritesService } from '../favorites/favorites.service';
 
 @Controller('/track')
 export class TracksController {
-  constructor(private tracksService: TracksService) {}
+  constructor(
+    private tracksService: TracksService,
+    private favoritesService: FavoritesService,
+  ) {}
 
   @Get()
   async getAll() {
@@ -66,6 +70,8 @@ export class TracksController {
     if (!deletedTrack) {
       throw new NotFoundException();
     }
+
+    this.favoritesService.removeTrack(uuid);
 
     return deletedTrack;
   }
