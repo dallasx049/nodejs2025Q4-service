@@ -13,10 +13,14 @@ import { CreateArtistDto } from './dto/create-artist.dto';
 import { parseDto, parseUUID } from '../../lib/validation';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { CreateArtistDtoSchema, UpdateArtistDtoSchema } from './lib/validation';
+import { AlbumsService } from '../albums/albums.service';
 
 @Controller('/artist')
 export class ArtistsController {
-  constructor(private artistsService: ArtistsService) {}
+  constructor(
+    private artistsService: ArtistsService,
+    private albumsService: AlbumsService,
+  ) {}
 
   @Get()
   async getAll() {
@@ -65,6 +69,12 @@ export class ArtistsController {
 
     if (!deletedArtist) {
       throw new NotFoundException();
+    }
+
+    const album = this.albumsService.getByArtistId(uuid);
+
+    if (album) {
+      await this.albumsService.update(album.id, { artistId: null });
     }
 
     return deletedArtist;

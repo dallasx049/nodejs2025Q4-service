@@ -6,6 +6,7 @@ import { CreateArtistDto } from './dto/create-artist.dto';
 @Injectable()
 export class ArtistsService {
   private readonly artists: Artist[] = [];
+  private readonly artistsIds: Set<Artist['id']> = new Set();
 
   getAll(): Promise<Artist[]> {
     return Promise.resolve(this.artists);
@@ -16,6 +17,7 @@ export class ArtistsService {
       const artist = { ...createArtistDto, id: v4() };
 
       this.artists.push(artist);
+      this.artistsIds.add(artist.id);
 
       res(artist);
     });
@@ -59,8 +61,13 @@ export class ArtistsService {
 
       const deletedArtist = this.artists[index];
       this.artists.splice(index, 1);
+      this.artistsIds.delete(id);
 
       res(deletedArtist);
     });
+  }
+
+  has(id: Artist['id']): boolean {
+    return this.artistsIds.has(id);
   }
 }
